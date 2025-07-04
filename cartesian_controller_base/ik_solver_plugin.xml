@@ -24,6 +24,14 @@
     </description>
   </class>
 
+  <class name="damped_least_squares_redundant"
+         type="cartesian_controller_base::DampedLeastSquaresRedundantSolver"
+         base_class_type="cartesian_controller_base::IKSolver">
+    <description>
+      A damped least squares (DLS) IK solver with joint centering for redundant manipulators
+    </description>
+  </class>
+
   <class name="selectively_damped_least_squares"
          type="cartesian_controller_base::SelectivelyDampedLeastSquaresSolver"
          base_class_type="cartesian_controller_base::IKSolver">
