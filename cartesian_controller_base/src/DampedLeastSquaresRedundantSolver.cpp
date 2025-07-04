@@ -57,7 +57,8 @@
  *     solver:
  *         ...
  *         damped_least_squares_redundant:
- *             alpha: 0.5
+ *             alpha: 0.1
+ *             alpha_centering: 0.1
  * \endcode
  *
  */
@@ -81,11 +82,21 @@ trajectory_msgs::msg::JointTrajectoryPoint DampedLeastSquaresRedundantSolver::ge
   ctrl::MatrixND identity;
   identity.setIdentity(m_number_joints, m_number_joints);
   m_handle->get_parameter(m_params + ".alpha", m_alpha);
+  m_handle->get_parameter(m_params + ".alpha_centering", m_alpha_centering);
 
-  m_current_velocities.data =
+  // Damped least squares pseudo-inverse
+  Eigen::MatrixXd jacobian_pinv =
     (m_jnt_jacobian.data.transpose() * m_jnt_jacobian.data + m_alpha * m_alpha * identity)
       .inverse() *
-    m_jnt_jacobian.data.transpose() * net_force;
+    m_jnt_jacobian.data.transpose();
+  Eigen::MatrixXd nullspace_projector = identity - jacobian_pinv * m_jnt_jacobian.data;
+
+  // Secondary objective: joint centering
+  Eigen::VectorXd jnt_centers = 0.5 * (m_upper_pos_limits.data + m_lower_pos_limits.data);
+  Eigen::VectorXd centering_loss = -m_alpha_centering * (m_current_positions.data - jnt_centers);
+
+  // Compute joint velocities
+  m_current_velocities.data = jacobian_pinv * net_force + nullspace_projector * centering_loss;
 
   // Integrate once, starting with zero motion
   m_current_positions.data =
@@ -123,7 +134,8 @@ bool DampedLeastSquaresRedundantSolver::init(std::shared_ptr<rclcpp_lifecycle::L
   m_jnt_jacobian_solver.reset(new KDL::ChainJntToJacSolver(m_chain));
   m_jnt_jacobian.resize(m_number_joints);
 
-  auto_declare(m_params + ".alpha", 1.0);
+  auto_declare(m_params + ".alpha", 0.01);
+  auto_declare(m_params + ".alpha_centering", 0.01);
 
   return true;
 }

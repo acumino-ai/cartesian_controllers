@@ -98,6 +98,7 @@ private:
   const std::string m_params =
     "solver.damped_least_squares_redundant";  ///< namespace for parameter access
   double m_alpha;                             ///< damping coefficient
+  double m_alpha_centering;                   ///< null space centering coefficient
 };
 
 }  // namespace cartesian_controller_base
