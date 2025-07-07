@@ -67,7 +67,10 @@ PLUGINLIB_EXPORT_CLASS(cartesian_controller_base::DampedLeastSquaresRedundantSol
 
 namespace cartesian_controller_base
 {
-DampedLeastSquaresRedundantSolver::DampedLeastSquaresRedundantSolver() : m_alpha(0.01) {}
+DampedLeastSquaresRedundantSolver::DampedLeastSquaresRedundantSolver()
+: m_alpha(0.01), m_alpha_centering(0.01)
+{
+}
 
 DampedLeastSquaresRedundantSolver::~DampedLeastSquaresRedundantSolver() {}
 
