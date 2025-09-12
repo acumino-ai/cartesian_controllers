@@ -86,6 +86,7 @@ add_library(ik_solvers SHARED
   src/ForwardDynamicsSolver.cpp
   src/JacobianTransposeSolver.cpp
   src/DampedLeastSquaresSolver.cpp
+  src/DampedLeastSquaresRedundantSolver.cpp
   src/SelectivelyDampedLeastSquaresSolver.cpp
 )
 
