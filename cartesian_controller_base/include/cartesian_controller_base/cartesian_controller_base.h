@@ -56,6 +56,7 @@
 #include <memory>
 #include <pluginlib/class_loader.hpp>
 #include <rclcpp/rclcpp.hpp>
+#include <std_msgs/msg/float64_multi_array.hpp>
 #include <string>
 #include <trajectory_msgs/msg/joint_trajectory_point.hpp>
 #include <vector>
@@ -223,6 +224,9 @@ private:
     m_feedback_pose_publisher;
   realtime_tools::RealtimePublisherSharedPtr<geometry_msgs::msg::TwistStamped>
     m_feedback_twist_publisher;
+  bool m_publish_joint_cmd;
+  realtime_tools::RealtimePublisherSharedPtr<std_msgs::msg::Float64MultiArray> m_feedback_joint_cmd;
+  std::vector<double> m_joint_cmds_values;
 
   std::vector<std::string> m_cmd_interface_types;
   std::vector<std::reference_wrapper<hardware_interface::LoanedCommandInterface>>
