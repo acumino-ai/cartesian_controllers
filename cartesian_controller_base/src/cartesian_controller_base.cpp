@@ -402,6 +402,7 @@ void CartesianControllerBase::writeJointControlCmds()
 
   if (m_publish_joint_cmd && m_feedback_joint_cmd->trylock())
   {
+    m_feedback_joint_cmd->msg_.header.stamp = get_node()->get_clock()->now();
     if (is_position)
     {
       m_feedback_joint_cmd->msg_.displacements = m_joint_cmds_values;
