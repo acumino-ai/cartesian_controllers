@@ -38,6 +38,7 @@ find_package(trajectory_msgs REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(urdf REQUIRED)
 find_package(realtime_tools REQUIRED)
+find_package(control_msgs REQUIRED)
 
 
 # Convenience variable for dependencies

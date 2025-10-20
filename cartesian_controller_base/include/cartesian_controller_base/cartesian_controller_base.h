@@ -45,6 +45,7 @@
 #include <cartesian_controller_base/Utility.h>
 #include <realtime_tools/realtime_publisher.h>
 
+#include <control_msgs/msg/joint_jog.hpp>
 #include <controller_interface/controller_interface.hpp>
 #include <functional>
 #include <geometry_msgs/msg/pose_stamped.hpp>
@@ -223,6 +224,9 @@ private:
     m_feedback_pose_publisher;
   realtime_tools::RealtimePublisherSharedPtr<geometry_msgs::msg::TwistStamped>
     m_feedback_twist_publisher;
+  bool m_publish_joint_cmd;
+  realtime_tools::RealtimePublisherSharedPtr<control_msgs::msg::JointJog> m_feedback_joint_cmd;
+  std::vector<double> m_joint_cmds_values;
 
   std::vector<std::string> m_cmd_interface_types;
   std::vector<std::reference_wrapper<hardware_interface::LoanedCommandInterface>>

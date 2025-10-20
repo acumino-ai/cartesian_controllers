@@ -100,6 +100,7 @@ CartesianControllerBase::on_init()
     auto_declare<double>("solver.error_scale", 1.0);
     auto_declare<int>("solver.iterations", 1);
     auto_declare<bool>("solver.publish_state_feedback", false);
+    auto_declare<bool>("solver.publish_cmds", false);
     m_initialized = true;
   }
   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
@@ -248,6 +249,18 @@ CartesianControllerBase::on_configure(const rclcpp_lifecycle::State & previous_s
       get_node()->create_publisher<geometry_msgs::msg::TwistStamped>(
         std::string(get_node()->get_name()) + "/current_twist", 3));
 
+  m_publish_joint_cmd = get_node()->get_parameter("solver.publish_cmds").as_bool();
+  m_feedback_joint_cmd =
+    std::make_shared<realtime_tools::RealtimePublisher<control_msgs::msg::JointJog>>(
+      get_node()->create_publisher<control_msgs::msg::JointJog>(
+        std::string(get_node()->get_name()) + "/joint_cmd", 3));
+  m_feedback_joint_cmd->msg_.joint_names = m_joint_names;
+  m_joint_cmds_values.reserve(m_joint_names.size());
+  for (size_t i = 0; i < m_joint_names.size(); i++)
+  {
+    m_joint_cmds_values.emplace_back(0);
+  }
+
   m_configured = true;
 
   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
@@ -365,6 +378,7 @@ void CartesianControllerBase::writeJointControlCmds()
   }
 
   // Write all available types.
+  bool is_position = true;
   for (const auto & type : m_cmd_interface_types)
   {
     if (type == hardware_interface::HW_IF_POSITION)
@@ -372,15 +386,32 @@ void CartesianControllerBase::writeJointControlCmds()
       for (size_t i = 0; i < m_joint_names.size(); ++i)
       {
         m_joint_cmd_pos_handles[i].get().set_value(m_simulated_joint_motion.positions[i]);
+        m_joint_cmds_values[i] = m_simulated_joint_motion.positions[i];
       }
     }
     if (type == hardware_interface::HW_IF_VELOCITY)
     {
+      is_position = false;
       for (size_t i = 0; i < m_joint_names.size(); ++i)
       {
         m_joint_cmd_vel_handles[i].get().set_value(m_simulated_joint_motion.velocities[i]);
+        m_joint_cmds_values[i] = m_simulated_joint_motion.velocities[i];
       }
     }
+  }
+
+  if (m_publish_joint_cmd && m_feedback_joint_cmd->trylock())
+  {
+    m_feedback_joint_cmd->msg_.header.stamp = get_node()->get_clock()->now();
+    if (is_position)
+    {
+      m_feedback_joint_cmd->msg_.displacements = m_joint_cmds_values;
+    }
+    else
+    {
+      m_feedback_joint_cmd->msg_.velocities = m_joint_cmds_values;
+    }
+    m_feedback_joint_cmd->unlockAndPublish();
   }
 }
 
