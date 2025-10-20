@@ -251,10 +251,10 @@ CartesianControllerBase::on_configure(const rclcpp_lifecycle::State & previous_s
 
   m_publish_joint_cmd = get_node()->get_parameter("solver.publish_cmds").as_bool();
   m_feedback_joint_cmd =
-    std::make_shared<realtime_tools::RealtimePublisher<std_msgs::msg::Float64MultiArray>>(
-      get_node()->create_publisher<std_msgs::msg::Float64MultiArray>(
+    std::make_shared<realtime_tools::RealtimePublisher<control_msgs::msg::JointJog>>(
+      get_node()->create_publisher<control_msgs::msg::JointJog>(
         std::string(get_node()->get_name()) + "/joint_cmd", 3));
-  m_feedback_joint_cmd->msg_.data.reserve(m_joint_names.size());
+  m_feedback_joint_cmd->msg_.joint_names = m_joint_names;
   m_joint_cmds_values.reserve(m_joint_names.size());
   for (size_t i = 0; i < m_joint_names.size(); i++)
   {
@@ -378,6 +378,7 @@ void CartesianControllerBase::writeJointControlCmds()
   }
 
   // Write all available types.
+  bool is_position = true;
   for (const auto & type : m_cmd_interface_types)
   {
     if (type == hardware_interface::HW_IF_POSITION)
@@ -390,6 +391,7 @@ void CartesianControllerBase::writeJointControlCmds()
     }
     if (type == hardware_interface::HW_IF_VELOCITY)
     {
+      is_position = false;
       for (size_t i = 0; i < m_joint_names.size(); ++i)
       {
         m_joint_cmd_vel_handles[i].get().set_value(m_simulated_joint_motion.velocities[i]);
@@ -400,7 +402,14 @@ void CartesianControllerBase::writeJointControlCmds()
 
   if (m_publish_joint_cmd && m_feedback_joint_cmd->trylock())
   {
-    m_feedback_joint_cmd->msg_.data = m_joint_cmds_values;
+    if (is_position)
+    {
+      m_feedback_joint_cmd->msg_.displacements = m_joint_cmds_values;
+    }
+    else
+    {
+      m_feedback_joint_cmd->msg_.velocities = m_joint_cmds_values;
+    }
     m_feedback_joint_cmd->unlockAndPublish();
   }
 }
